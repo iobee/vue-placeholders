@@ -20,71 +20,78 @@
  */
 
 /**
-* Based entirely on the work of Josh David Miller (https://github.com/joshdmiller/angular-placeholders)
-* Ported from AngularJS to Vue.js (http://vuejs.org/)
-**/
+ * Based entirely on the work of Josh David Miller (https://github.com/joshdmiller/angular-placeholders)
+ * Ported from AngularJS to Vue.js (http://vuejs.org/)
+ **/
 
 module.exports = {
 
-  bind: function() {
-    this.config  = {
-      text_size: 10,
-      fill_color: '#EEEEEE',
-      text_color: '#AAAAAA'
+    bind: function() {
+        this.config = {
+            text_size: 10,
+            fill_color: '#EEEEEE',
+            text_color: '#AAAAAA'
+        }
+    },
+
+    update: function(value) {
+        var value = this.value ? this.value : this.key,
+            valueMatches = value.match(/^(\w+)\?(\w+)$/),
+            val = valueMatches[1],
+            text = valueMatches[2] ? valueMatches[2] : val,
+            el = this.el,
+            matches = val.match(/^(\d+)x(\d+)$/),
+            dataUrl,
+            size
+
+        if (!matches) return
+
+        size = {
+            w: matches[1],
+            h: matches[2]
+        }
+        el.setAttribute("title", val)
+        el.setAttribute("alt", val)
+
+        dataUrl = this.drawImage(text, size)
+
+        if (el.tagName === "IMG") {
+            el.setAttribute('src', dataUrl)
+        } else {
+            el.style.backgroundImage = 'url("' + dataUrl + '")'
+        }
+    },
+
+    getTextSize: function(size) {
+        var dimension_arr = [size.h, size.w].sort(),
+            maxFactor = Math.round(dimension_arr[1] / 16)
+
+        return Math.max(this.config.text_size, maxFactor)
+    },
+
+    drawImage: function(val, size) {
+        var canvas = document.createElement('canvas'),
+            context = canvas.getContext('2d'),
+            text_size = this.getTextSize(size),
+            config = this.config,
+            text = val
+
+        canvas.width = size.w
+        canvas.height = size.h
+        context.fillStyle = config.fill_color
+        context.fillRect(0, 0, size.w, size.h)
+        context.fillStyle = config.text_color
+        context.textAlign = 'center'
+        context.textBaseline = 'middle'
+        context.font = 'bold ' + text_size + 'pt sans-serif'
+
+        if (context.measureText(text).width / size.w > 1) {
+            text_size = config.text_size / (context.measureText(text).width /
+                size.w)
+            context.font = 'bold ' + text_size + 'pt sans-serif'
+        }
+
+        context.fillText(text, size.w / 2, size.h / 2)
+        return canvas.toDataURL("image/png")
     }
-  },
-  
-  update: function (value) {
-    var val     = this.value ? this.value : this.key,
-        el      = this.el,
-        matches = val.match( /^(\d+)x(\d+)$/ ),
-        dataUrl,
-        size
-
-    if(!matches) return
-    
-    size = { w: matches[1], h: matches[2] }
-    el.setAttribute("title", val)
-    el.setAttribute("alt", val)
-
-    dataUrl = this.drawImage(val, size)
-
-    if (el.tagName === "IMG") {
-      el.setAttribute('src', dataUrl)
-    } else {
-      el.style.backgroundImage = 'url("' + dataUrl + '")'
-    }
-  },
-
-  getTextSize: function(size) {
-    var dimension_arr = [size.h, size.w].sort(),
-        maxFactor     = Math.round(dimension_arr[1] / 16)
- 
-    return Math.max(this.config.text_size, maxFactor)
-  },
-
-  drawImage: function(val, size) {
-    var canvas    = document.createElement( 'canvas' ),
-        context   = canvas.getContext( '2d' ),
-        text_size = this.getTextSize(size),
-        config    = this.config,
-        text      = val
-
-    canvas.width = size.w
-    canvas.height = size.h
-    context.fillStyle = config.fill_color
-    context.fillRect( 0, 0, size.w, size.h )
-    context.fillStyle = config.text_color
-    context.textAlign = 'center'
-    context.textBaseline = 'middle'
-    context.font = 'bold '+ text_size + 'pt sans-serif'
-
-    if (context.measureText(text).width / size.w > 1) {
-      text_size = config.text_size / (context.measureText(text).width / size.w)
-      context.font = 'bold ' + text_size + 'pt sans-serif'
-    }
-
-    context.fillText( text, size.w / 2, size.h / 2 )
-    return canvas.toDataURL("image/png")
-  }
 }
